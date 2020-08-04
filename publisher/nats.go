@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"github.com/dovbysh/go-outboxer/event"
 	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
 	"github.com/nats-io/stan.go"
 	"sync"
 	"time"
 )
 
 type Nats struct {
-	outBoxModel   orm.TableModel
+	tableName     string
 	sc            stan.Conn
 	db            *pg.DB
 	PubCh         chan uint64
@@ -20,9 +19,9 @@ type Nats struct {
 	numPublishers int
 }
 
-func NewNats(outBoxModel orm.TableModel, sc stan.Conn, db *pg.DB, numPublishers int) *Nats {
+func NewNats(tableName string, sc stan.Conn, db *pg.DB, numPublishers int) *Nats {
 	p := &Nats{
-		outBoxModel:   outBoxModel,
+		tableName:     tableName,
 		sc:            sc,
 		db:            db,
 		PubCh:         make(chan uint64, numPublishers),
@@ -45,11 +44,11 @@ func (p *Nats) Publish(ch <-chan uint64, ech chan<- error) {
 	for ID := range ch {
 		err := p.db.RunInTransaction(func(tx *pg.Tx) error {
 			var out event.Outbox
-			m := p.outBoxModel
-			if err := tx.Model(m).
+			if err := tx.Model(&out).
+				Table(p.tableName).
 				For("UPDATE").
 				Where("id = ? and published = false", ID).
-				Select(&out); err != nil {
+				Select(); err != nil {
 				return err
 			}
 			var wg sync.WaitGroup
@@ -61,8 +60,8 @@ func (p *Nats) Publish(ch <-chan uint64, ech chan<- error) {
 					accError = err
 					return
 				}
-				m := p.outBoxModel
-				r, err := tx.Model(m).
+				r, err := tx.Model(&out).
+					Table(p.tableName).
 					Set("published = true").
 					Set("published_at = ?", time.Now()).
 					Set("published_nuid = ?", nuid).
@@ -124,11 +123,12 @@ func (p *Nats) PublishUnPublished() (<-chan error, <-chan struct{}) {
 		var maxId uint64
 		var err error
 		for {
-			err = p.db.Model(p.outBoxModel).
+			err = p.db.Model(&events).
+				Table(p.tableName).
 				Where("published=false and id > ?", maxId).
 				Order("id", "created_at").
 				Limit(p.numPublishers + 1).
-				Select(&events)
+				Select()
 			if err != nil && err != pg.ErrNoRows {
 				break
 			}
