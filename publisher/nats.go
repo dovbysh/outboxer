@@ -2,7 +2,7 @@ package publisher
 
 import (
 	"fmt"
-	"github.com/dovbysh/go-outboxer/event"
+	"github.com/dovbysh/outboxer/event"
 	"github.com/go-pg/pg/v9"
 	"github.com/nats-io/stan.go"
 	"sync"

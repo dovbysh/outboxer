@@ -2,7 +2,7 @@ package publisher
 
 import (
 	"encoding/json"
-	"github.com/dovbysh/go-outboxer/event"
+	"github.com/dovbysh/outboxer/event"
 	"github.com/dovbysh/go-utils/testing/tlog"
 	"github.com/dovbysh/tests_common/v3"
 	"github.com/go-pg/pg/v9"
