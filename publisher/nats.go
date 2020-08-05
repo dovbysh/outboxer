@@ -2,7 +2,7 @@ package publisher
 
 import (
 	"fmt"
-	"github.com/dovbysh/outboxer/event"
+	"github.com/dovbysh/outboxer/events"
 	"github.com/go-pg/pg/v9"
 	"github.com/nats-io/stan.go"
 	"sync"
@@ -43,7 +43,7 @@ func NewNats(tableName string, sc stan.Conn, db *pg.DB, numPublishers int) *Nats
 func (p *Nats) Publish(ch <-chan uint64, ech chan<- error) {
 	for ID := range ch {
 		err := p.db.RunInTransaction(func(tx *pg.Tx) error {
-			var out event.Outbox
+			var out events.Outbox
 			if err := tx.Model(&out).
 				Table(p.tableName).
 				For("UPDATE").
@@ -102,7 +102,7 @@ func (p *Nats) Close() {
 }
 
 func (p *Nats) PublishUnPublished() (<-chan error, <-chan struct{}) {
-	var events []event.Outbox
+	var events []events.Outbox
 	PubCh := p.PubCh
 	errCh := p.ErrCh
 	var wg sync.WaitGroup

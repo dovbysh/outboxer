@@ -2,7 +2,7 @@ package publisher
 
 import (
 	"encoding/json"
-	"github.com/dovbysh/outboxer/event"
+	"github.com/dovbysh/outboxer/events"
 	"github.com/dovbysh/go-utils/testing/tlog"
 	"github.com/dovbysh/tests_common/v3"
 	"github.com/go-pg/pg/v9"
@@ -64,7 +64,7 @@ func TestNats(t *testing.T) {
 }
 
 func simple(t *testing.T) {
-	db.Model((*event.Outbox)(nil)).Table("_natss_outbox").CreateTable(&orm.CreateTableOptions{IfNotExists: true})
+	db.Model((*events.Outbox)(nil)).Table("_natss_outbox").CreateTable(&orm.CreateTableOptions{IfNotExists: true})
 	db.Model((*User)(nil)).CreateTable(nil)
 	n := NewNats("_natss_outbox", sc, db, 1)
 	defer n.Close()
@@ -103,7 +103,7 @@ func simple(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		out := event.Outbox{
+		out := events.Outbox{
 			Subject: simpleSubj,
 			Data:    b,
 		}
@@ -127,7 +127,7 @@ func simple(t *testing.T) {
 }
 
 func publishUnpublished(t *testing.T) {
-	db.Model((*event.Outbox)(nil)).Table("_natss_outbox").CreateTable(&orm.CreateTableOptions{IfNotExists: true})
+	db.Model((*events.Outbox)(nil)).Table("_natss_outbox").CreateTable(&orm.CreateTableOptions{IfNotExists: true})
 	db.Query(nil, "INSERT INTO _natss_outbox (\"id\", \"published\", \"published_nuid\", \"created_at\", \"published_at\", \"subject\", \"data\") VALUES (DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, 'simple', '\\x7b224964223a312c224c6f67696e223a226c6c6c227d')")
 	n := NewNats("_natss_outbox", sc, db, 1)
 	defer n.Close()
