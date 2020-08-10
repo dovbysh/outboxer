@@ -19,13 +19,13 @@ type Nats struct {
 	numPublishers int
 }
 
-func NewNats(tableName string, sc stan.Conn, db *pg.DB, numPublishers int) *Nats {
+func NewNats(tableName string, sc stan.Conn, db *pg.DB, numPublishers int, chanLength uint64) *Nats {
 	p := &Nats{
 		tableName:     tableName,
 		sc:            sc,
 		db:            db,
-		PubCh:         make(chan uint64, numPublishers),
-		ErrCh:         make(chan error, numPublishers),
+		PubCh:         make(chan uint64, chanLength),
+		ErrCh:         make(chan error, chanLength),
 		wg:            sync.WaitGroup{},
 		numPublishers: numPublishers,
 	}
@@ -89,9 +89,9 @@ func (p *Nats) Publish(ch <-chan uint64, ech chan<- error) {
 		})
 		if err != nil {
 			ech <- err
+
 			continue
 		}
-
 	}
 }
 
