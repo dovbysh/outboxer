@@ -1,8 +1,6 @@
 module github.com/dovbysh/outboxer
 
-go 1.24.0
-
-toolchain go1.24.6
+go 1.24
 
 require (
 	github.com/dovbysh/go-utils v0.1.2-0.20240114170329-13f96d355140
