@@ -1,11 +1,15 @@
 package publisher
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/dovbysh/go-utils/testing/tlog"
 	"github.com/dovbysh/outboxer/events"
-	"github.com/dovbysh/tests_common"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/dovbysh/tests_common/v3"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/stan.go"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
@@ -93,7 +97,7 @@ func simple(t *testing.T) {
 	}(n.ErrCh)
 
 	var dbEventId uint64
-	if err := db.RunInTransaction(func(tx *pg.Tx) error {
+	if err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 		if _, err := tx.Model(&user).Returning("*").Insert(); err != nil {
 			return err
 		}
@@ -196,7 +200,7 @@ func chanLen(t *testing.T) {
 	wg.Add(chanLength)
 	for i := 0; i < chanLength; i++ {
 		var dbEventId uint64
-		if err := db.RunInTransaction(func(tx *pg.Tx) error {
+		if err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 			user.Id = uint64(i + 1)
 			b, err := json.Marshal(user)
 			if err != nil {
